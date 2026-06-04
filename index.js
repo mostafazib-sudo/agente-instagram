@@ -7,6 +7,9 @@ const VERIFY_TOKEN = 'agente123';
 const IG_TOKEN = process.env.IG_TOKEN;
 const GPT_TOKEN = process.env.GPT_TOKEN;
 const GPT_AGENT_ID = '3E9BC482CF4E20829D4F5E1A0F471CE6';
+const MY_IG_USER_ID = '17841445197809665'; // ID da conta mariocell
+
+const respondidos = new Set();
 
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === VERIFY_TOKEN && req.query['hub.mode'] === 'subscribe') {
@@ -28,6 +31,20 @@ app.post('/webhook', async (req, res) => {
     const userId = change.value.from?.id;
 
     if (!commentText || !commentId) return;
+
+    // Ignora comentários da própria conta
+    if (userId === MY_IG_USER_ID) {
+      console.log('Ignorando comentário próprio');
+      return;
+    }
+
+    // Ignora comentários já respondidos
+    if (respondidos.has(commentId)) {
+      console.log('Comentário já respondido, ignorando');
+      return;
+    }
+    respondidos.add(commentId);
+
     console.log('Comentário recebido:', commentText);
 
     const gptRes = await axios.post(
@@ -40,17 +57,16 @@ app.post('/webhook', async (req, res) => {
     if (!reply) return;
     console.log('Resposta gerada:', reply);
 
-    // Usando endpoint correto da API do Instagram
     await axios.post(
-  `https://graph.instagram.com/v21.0/${commentId}/replies`,
-  null,
-  {
-    params: {
-      message: reply,
-      access_token: IG_TOKEN
-    }
-  }
-);
+      `https://graph.instagram.com/v21.0/${commentId}/replies`,
+      null,
+      {
+        params: {
+          message: reply,
+          access_token: IG_TOKEN
+        }
+      }
+    );
 
     console.log('Respondido com sucesso!');
   } catch (err) {
