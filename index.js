@@ -7,9 +7,33 @@ const VERIFY_TOKEN = 'agente123';
 const IG_TOKEN = process.env.IG_TOKEN;
 const GPT_TOKEN = process.env.GPT_TOKEN;
 const GPT_AGENT_ID = '3E9BC482CF4E20829D4F5E1A0F471CE6';
-const MY_IG_USER_ID = '17841445197809665'; // ID da conta mariocell
+const MY_IG_USER_ID = '17841445197809665';
+const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'minhasenha123';
 
 const respondidos = new Set();
+let pausado = false;
+
+// Pausar o agente
+app.get('/pausar/:token', (req, res) => {
+  if (req.params.token !== ADMIN_TOKEN) return res.sendStatus(403);
+  pausado = true;
+  console.log('Agente PAUSADO');
+  res.send('✅ Agente pausado com sucesso!');
+});
+
+// Retomar o agente
+app.get('/retomar/:token', (req, res) => {
+  if (req.params.token !== ADMIN_TOKEN) return res.sendStatus(403);
+  pausado = false;
+  console.log('Agente RETOMADO');
+  res.send('✅ Agente retomado com sucesso!');
+});
+
+// Status do agente
+app.get('/status/:token', (req, res) => {
+  if (req.params.token !== ADMIN_TOKEN) return res.sendStatus(403);
+  res.send(`Status: ${pausado ? '⏸ PAUSADO' : '▶️ ATIVO'}`);
+});
 
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === VERIFY_TOKEN && req.query['hub.mode'] === 'subscribe') {
@@ -21,6 +45,8 @@ app.get('/webhook', (req, res) => {
 
 app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
+  if (pausado) return;
+
   try {
     const entry = req.body.entry?.[0];
     const change = entry?.changes?.[0];
@@ -31,18 +57,8 @@ app.post('/webhook', async (req, res) => {
     const userId = change.value.from?.id;
 
     if (!commentText || !commentId) return;
-
-    // Ignora comentários da própria conta
-    if (userId === MY_IG_USER_ID) {
-      console.log('Ignorando comentário próprio');
-      return;
-    }
-
-    // Ignora comentários já respondidos
-    if (respondidos.has(commentId)) {
-      console.log('Comentário já respondido, ignorando');
-      return;
-    }
+    if (userId === MY_IG_USER_ID) return;
+    if (respondidos.has(commentId)) return;
     respondidos.add(commentId);
 
     console.log('Comentário recebido:', commentText);
