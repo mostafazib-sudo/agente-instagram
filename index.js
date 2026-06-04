@@ -8,7 +8,6 @@ const IG_TOKEN = process.env.IG_TOKEN;
 const GPT_TOKEN = process.env.GPT_TOKEN;
 const GPT_AGENT_ID = '3E9BC482CF4E20829D4F5E1A0F471CE6';
 
-// Verificação do webhook
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === VERIFY_TOKEN && req.query['hub.mode'] === 'subscribe') {
     res.send(req.query['hub.challenge']);
@@ -17,7 +16,6 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-// Recebe comentários
 app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
   try {
@@ -30,8 +28,8 @@ app.post('/webhook', async (req, res) => {
     const userId = change.value.from?.id;
 
     if (!commentText || !commentId) return;
+    console.log('Comentário recebido:', commentText);
 
-    // Manda para o GPT Maker
     const gptRes = await axios.post(
       `https://api.gptmaker.ai/v2/agent/${GPT_AGENT_ID}/conversation`,
       { contextId: userId || commentId, prompt: commentText },
@@ -40,14 +38,21 @@ app.post('/webhook', async (req, res) => {
 
     const reply = gptRes.data.message;
     if (!reply) return;
+    console.log('Resposta gerada:', reply);
 
-    // Posta a resposta no comentário
+    // Usando endpoint correto da API do Instagram
     await axios.post(
       `https://graph.facebook.com/v19.0/${commentId}/replies`,
-      { message: reply, access_token: IG_TOKEN }
+      null,
+      {
+        params: {
+          message: reply,
+          access_token: IG_TOKEN
+        }
+      }
     );
 
-    console.log('Respondido:', commentText, '->', reply);
+    console.log('Respondido com sucesso!');
   } catch (err) {
     console.error('Erro:', err.response?.data || err.message);
   }
