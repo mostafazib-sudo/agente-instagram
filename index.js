@@ -42,15 +42,15 @@ app.post('/webhook', async (req, res) => {
 
     // Usando endpoint correto da API do Instagram
     await axios.post(
-      `https://graph.facebook.com/v19.0/${commentId}/replies`,
-      null,
-      {
-        params: {
-          message: reply,
-          access_token: IG_TOKEN
-        }
-      }
-    );
+  `https://graph.instagram.com/v21.0/${commentId}/replies`,
+  null,
+  {
+    params: {
+      message: reply,
+      access_token: IG_TOKEN
+    }
+  }
+);
 
     console.log('Respondido com sucesso!');
   } catch (err) {
