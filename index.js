@@ -65,7 +65,7 @@ app.post('/webhook', async (req, res) => {
 
     const gptRes = await axios.post(
       `https://api.gptmaker.ai/v2/agent/${GPT_AGENT_ID}/conversation`,
-      { contextId: userId || commentId, prompt: commentText },
+      { contextId: userId || commentId, prompt: `Você está respondendo um comentário público no Instagram. Seja breve, simpático e natural — no máximo 1 ou 2 frases. Não se apresente, não faça perguntas, não mande links. Só responda de forma humana e direta ao comentário abaixo:\n\n"${commentText}"` },
       { headers: { Authorization: `Bearer ${GPT_TOKEN}` } }
     );
 
