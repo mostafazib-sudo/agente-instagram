@@ -63,26 +63,9 @@ app.post('/webhook', async (req, res) => {
 
     console.log('Comentário recebido:', commentText);
 
-    const gatilhosPreco = /\b(valor|pre[çc]o|quanto custa)\b/i;
-    if (gatilhosPreco.test(commentText)) {
-      const respostaPreco = 'Manda na nossa DM pra saber mais! 📲';
-      await axios.post(
-        `https://graph.instagram.com/v21.0/${commentId}/replies`,
-        null,
-        {
-          params: {
-            message: respostaPreco,
-            access_token: IG_TOKEN
-          }
-        }
-      );
-      console.log('Respondido com regra de preço (sem IA):', respostaPreco);
-      return;
-    }
-
     const gptRes = await axios.post(
       `https://api.gptmaker.ai/v2/agent/${GPT_AGENT_ID}/conversation`,
-      { contextId: userId || commentId, prompt: `Você é a Lulu, assistente de suporte respondendo comentários públicos no Instagram. Seja breve, simpática e natural — no máximo 1 ou 2 frases. Não faça perguntas, não mande links. Se perguntarem seu nome, diga que é a Lulu. Responda de forma humana e direta ao comentário abaixo:\n\n"${commentText}"` },
+      { contextId: userId || commentId, prompt: `Você é a Lulu, assistente de suporte respondendo comentários públicos no Instagram. Seja breve, simpática e natural — no máximo 1 ou 2 frases. Não faça perguntas, não mande links. Se perguntarem seu nome, diga que é a Lulu. Se o comentário mencionar valor, preço ou perguntar quanto custa, não informe nenhum valor — recomende de forma simpática que a pessoa mande mensagem na nossa DM pra saber mais, por exemplo: "Manda na nossa DM pra saber mais! 📲". Responda de forma humana e direta ao comentário abaixo:\n\n"${commentText}"` },
       { headers: { Authorization: `Bearer ${GPT_TOKEN}` } }
     );
 
